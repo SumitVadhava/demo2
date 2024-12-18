@@ -3,151 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BCA JS Attendance</title>
+  <title>Attendance Marking System</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      line-height: 1.6;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
     }
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     label {
-      font-weight: bold;
+      display: block;
+      font-size: 16px;
+      margin-bottom: 5px;
+      color: #333;
     }
-    input {
-      padding: 8px;
+    input[type="text"] {
       width: 100%;
-      margin-top: 5px;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
       box-sizing: border-box;
     }
     button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
       background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 10px 20px;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 16px;
+      margin-top: 20px;
     }
     button:hover {
       background-color: #45a049;
     }
     .message {
+      padding: 10px;
       margin-top: 20px;
+      border-radius: 5px;
       font-weight: bold;
     }
-    .success {
-      color: green;
+    .message.success {
+      background-color: #4CAF50;
+      color: white;
     }
-    .error {
-      color: red;
+    .message.error {
+      background-color: #f44336;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <h1>BCA JS Attendance</h1>
-
-  <div class="form-group">
-    <label for="rollNo">Roll Number:</label>
-    <input type="text" id="rollNo" placeholder="Enter your roll number" />
+  <div class="container">
+    <h1>Mark Attendance</h1>
+    
+    <!-- Form for Roll No and Batch No -->
+    <div class="form-group">
+      <label for="rollNo">Roll Number:</label>
+      <input type="text" id="rollNo" required placeholder="Enter your Roll Number" />
+    </div>
+    <div class="form-group">
+      <label for="batchNo">Batch Number:</label>
+      <input type="text" id="batchNo" required placeholder="Enter your Batch Number" />
+    </div>
+    <button onclick="handleAttendance()">Mark Attendance</button>
+    
+    <!-- Message for attendance status -->
+    <div id="attendanceMessage" class="message"></div>
   </div>
-
-  <div class="form-group">
-    <label for="batchNo">Batch Number:</label>
-    <input type="text" id="batchNo" placeholder="Enter your batch number" />
-  </div>
-
-  <button id="attendanceBtn">Mark Attendance</button>
-
-  <div class="message" id="locationMessage"></div>
-  <div class="message" id="attendanceMessage"></div>
 
   <script>
-    const allowedLocation = { latitude: 22.4183951, longitude: 70.7807652 }; // Allowed coordinates
-    const radius = 250; // 250 meters
-
-    const locationMessage = document.getElementById("locationMessage");
     const attendanceMessage = document.getElementById("attendanceMessage");
-    const attendanceBtn = document.getElementById("attendanceBtn");
-
-    // Function to calculate distance (Haversine formula)
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const toRad = (value) => (value * Math.PI) / 180; // Convert degrees to radians
-      const R = 6371e3; // Earth's radius in meters
-
-      const φ1 = toRad(lat1);
-      const φ2 = toRad(lat2);
-      const Δφ = toRad(lat2 - lat1);
-      const Δλ = toRad(lon2 - lon1);
-
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-      const distance = R * c; // Distance in meters
-      console.log(`Calculated Distance: ${distance.toFixed(2)} meters`);
-      return distance;
-    }
-
-    // Function to check user's location
-    function checkLocation(callback) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-
-            // Log current location
-            console.log(`Current Location: Latitude: ${latitude}, Longitude: ${longitude}`);
-
-            // Calculate the distance
-            const distance = getDistance(
-              allowedLocation.latitude,
-              allowedLocation.longitude,
-              latitude,
-              longitude
-            );
-
-            console.log(`Distance from Allowed Location: ${distance.toFixed(2)} meters`);
-
-            if (distance > radius) {
-              locationMessage.textContent =
-                "You are outside the allowed location. Attendance marking is not allowed.";
-              locationMessage.className = "message error";
-              callback(false);
-            } else {
-              locationMessage.textContent = "You are within the allowed location.";
-              locationMessage.className = "message success";
-              callback(true);
-            }
-          },
-          (error) => {
-            console.error("Geolocation error:", error);
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                locationMessage.textContent = "Location permission denied.";
-                break;
-              case error.POSITION_UNAVAILABLE:
-                locationMessage.textContent = "Location unavailable.";
-                break;
-              case error.TIMEOUT:
-                locationMessage.textContent = "Location request timed out.";
-                break;
-              default:
-                locationMessage.textContent = "An unknown error occurred.";
-            }
-            locationMessage.className = "message error";
-            callback(false);
-          },
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-        );
-      } else {
-        locationMessage.textContent =
-          "Geolocation is not supported by your browser.";
-        locationMessage.className = "message error";
-        callback(false);
-      }
-    }
 
     // Function to handle attendance marking
     function handleAttendance() {
@@ -201,17 +143,29 @@
       }
 
       // Check location and allow attendance if within the allowed radius
-      checkLocation((isAllowed) => {
+      checkLocation((isAllowed, location) => {
         if (isAllowed) {
           const currentTime = new Date().toLocaleString();
 
-          // Store the student's attendance timestamp
-          localStorage.setItem(rollNo, currentTime);
+          // Create attendance data object
+          const attendanceData = {
+            rollNo: rollNo,
+            batchNo: batchNo,
+            attendanceTime: currentTime,
+            location: {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            },
+          };
+
+          // Store the student's attendance data in localStorage
+          localStorage.setItem(rollNo, JSON.stringify(attendanceData));
 
           // Block the device for 24 hours after attendance is marked
           const deviceBlockedUntil = new Date();
           deviceBlockedUntil.setHours(deviceBlockedUntil.getHours() + 24);
           localStorage.setItem("deviceBlockedUntil", deviceBlockedUntil);
+
           attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}`;
           attendanceMessage.className = "message success";
         } else {
@@ -222,21 +176,27 @@
       });
     }
 
-    // Pre-fill inputs with stored values on page load
-    window.onload = function() {
-      const savedRollNo = localStorage.getItem('rollNo');
-      const savedBatchNo = localStorage.getItem('batchNo');
-
-      if (savedRollNo) {
-        document.getElementById('rollNo').value = savedRollNo;
+    // Function to check location using geolocation
+    function checkLocation(callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = position;
+            const isAllowed = true; // You can add further checks based on your location criteria
+            callback(isAllowed, location);
+          },
+          (error) => {
+            attendanceMessage.textContent = "Location access denied.";
+            attendanceMessage.className = "message error";
+            callback(false, null);
+          }
+        );
+      } else {
+        attendanceMessage.textContent = "Geolocation is not supported by this browser.";
+        attendanceMessage.className = "message error";
+        callback(false, null);
       }
-      if (savedBatchNo) {
-        document.getElementById('batchNo').value = savedBatchNo;
-      }
-    };
-
-    // Attach click event to button
-    attendanceBtn.addEventListener("click", handleAttendance);
+    }
   </script>
 </body>
 </html>
