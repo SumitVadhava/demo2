@@ -67,6 +67,9 @@
       background-color: #f44336;
       color: white;
     }
+    #locationInfo {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -86,10 +89,18 @@
     
     <!-- Message for attendance status -->
     <div id="attendanceMessage" class="message"></div>
+    
   </div>
 
   <script>
     const attendanceMessage = document.getElementById("attendanceMessage");
+    const locationInfo = document.getElementById("locationInfo");
+
+    // Predefined classroom location (latitude and longitude)
+    const classroomLocation = {
+      latitude: 22.4183951,  // Example: Latitude of the classroom
+      longitude: 70.7807652  // Example: Longitude of the classroom
+    };
 
     // Function to handle attendance marking
     function handleAttendance() {
@@ -97,9 +108,9 @@
       const batchNo = document.getElementById("batchNo").value.trim();
 
       if (!rollNo || !batchNo) {
-        attendanceMessage.textContent =
-          "Please enter both Roll Number and Batch Number.";
+        attendanceMessage.textContent = "Please enter both Roll Number and Batch Number.";
         attendanceMessage.className = "message error";
+        console.log("Failed to mark attendance: Roll Number or Batch Number is missing.");
         return;
       }
 
@@ -116,12 +127,10 @@
 
         // If device is blocked
         if (now < blockedUntil) {
-          const remainingTime = Math.ceil(
-            (blockedUntil - now) / (1000 * 60 * 60)
-          );
-          attendanceMessage.textContent =
-            `Your device is blocked for the next ${remainingTime} hours.`;
+          const remainingTime = Math.ceil((blockedUntil - now) / (1000 * 60 * 60));
+          attendanceMessage.textContent = `Your device is blocked for the next ${remainingTime} hours.`;
           attendanceMessage.className = "message error";
+          console.log(`Device is blocked. Remaining block time: ${remainingTime} hours.`);
           return;
         }
       }
@@ -135,43 +144,70 @@
         const diffInHours = (now - lastTimestamp) / (1000 * 60 * 60);
 
         if (diffInHours < 24) {
-          attendanceMessage.textContent =
-            "You have already marked attendance in the last 24 hours.";
+          attendanceMessage.textContent = "You have already marked attendance in the last 24 hours.";
           attendanceMessage.className = "message error";
+          console.log("Failed to mark attendance: Already marked within the last 24 hours.");
           return;
         }
       }
 
       // Check location and allow attendance if within the allowed radius
       checkLocation((isAllowed, location) => {
-        if (isAllowed) {
+        if (isAllowed && location) {
           const currentTime = new Date().toLocaleString();
 
-          // Create attendance data object
-          const attendanceData = {
-            rollNo: rollNo,
-            batchNo: batchNo,
-            attendanceTime: currentTime,
-            location: {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            },
-          };
+          // Calculate distance from the predefined classroom location
+          const distance = calculateDistance(
+            classroomLocation.latitude, 
+            classroomLocation.longitude, 
+            location.coords.latitude, 
+            location.coords.longitude
+          );
 
-          // Store the student's attendance data in localStorage
-          localStorage.setItem(rollNo, JSON.stringify(attendanceData));
+          // Log the current location and distance in the console
+          console.log(`Current Location: Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`);
+          console.log(`Distance from Classroom: ${distance.toFixed(2)} meters`);
 
-          // Block the device for 24 hours after attendance is marked
-          const deviceBlockedUntil = new Date();
-          deviceBlockedUntil.setHours(deviceBlockedUntil.getHours() + 24);
-          localStorage.setItem("deviceBlockedUntil", deviceBlockedUntil);
+          // Check if the location is within the allowed radius (100 meters)
+          const allowedRadius = 100;  // 100 meters
+          if (distance <= allowedRadius) {
+            // locationInfo.innerHTML = `
+            //   <p>Current Location: Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}</p>
+            //   <p>Distance from Classroom: ${distance.toFixed(2)} meters</p>
+            // `;
 
-          attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}`;
-          attendanceMessage.className = "message success";
+            // Create attendance data object
+            const attendanceData = {
+              rollNo: rollNo,
+              batchNo: batchNo,
+              attendanceTime: currentTime,
+              location: {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+              },
+              distance: distance
+            };
+
+            // Store the student's attendance data in localStorage
+            localStorage.setItem(rollNo, JSON.stringify(attendanceData));
+
+            // Block the device for 24 hours after attendance is marked
+            const deviceBlockedUntil = new Date();
+            deviceBlockedUntil.setHours(deviceBlockedUntil.getHours() + 24);
+            localStorage.setItem("deviceBlockedUntil", deviceBlockedUntil);
+
+            attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}`;
+            attendanceMessage.className = "message success";
+            console.log("Attendance successfully marked.");
+          } else {
+            attendanceMessage.textContent = "Attendance cannot be marked due to distance being too far from the classroom.";
+            attendanceMessage.className = "message error";
+            console.log("Failed to mark attendance: Location is outside the allowed radius.");
+          }
         } else {
-          attendanceMessage.textContent =
-            "Attendance cannot be marked due to invalid location.";
+          attendanceMessage.textContent = "Attendance cannot be marked due to invalid location.";
           attendanceMessage.className = "message error";
+          console.log("Failed to mark attendance: Invalid location.");
         }
       });
     }
@@ -189,13 +225,31 @@
             attendanceMessage.textContent = "Location access denied.";
             attendanceMessage.className = "message error";
             callback(false, null);
+            console.log("Failed to access location: " + error.message);
           }
         );
       } else {
         attendanceMessage.textContent = "Geolocation is not supported by this browser.";
         attendanceMessage.className = "message error";
         callback(false, null);
+        console.log("Geolocation not supported by browser.");
       }
+    }
+
+    // Function to calculate the distance between two geographical points (in meters)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Radius of the Earth in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in meters
+      return distance;
     }
   </script>
 </body>
