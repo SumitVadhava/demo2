@@ -64,11 +64,9 @@
   <div class="message" id="attendanceMessage"></div>
 
   <script>
-    // Allowed location: 22.4183951 (latitude), 70.7807652 (longitude)
-    const allowedLocation = { latitude: 22.4183951, longitude: 70.7807652};
-    const radius = 250; // Radius in meters (250 meters)
+    const allowedLocation = { latitude: 22.4183951, longitude: 70.7807652 }; // Allowed coordinates
+    const radius = 250; // 250 meters
 
-    // HTML Elements
     const locationMessage = document.getElementById("locationMessage");
     const attendanceMessage = document.getElementById("attendanceMessage");
     const attendanceBtn = document.getElementById("attendanceBtn");
@@ -83,9 +81,8 @@
       const Δφ = toRad(lat2 - lat1);
       const Δλ = toRad(lon2 - lon1);
 
-      const a =
-        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
       const distance = R * c; // Distance in meters
@@ -141,7 +138,8 @@
             }
             locationMessage.className = "message error";
             callback(false);
-          }
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
       } else {
         locationMessage.textContent =
@@ -237,7 +235,7 @@
       }
     };
 
-    // Attach click event to the button
+    // Attach click event to button
     attendanceBtn.addEventListener("click", handleAttendance);
   </script>
 </body>
