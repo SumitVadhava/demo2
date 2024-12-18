@@ -64,8 +64,8 @@
   <div class="message" id="attendanceMessage"></div>
 
   <script>
-    // Allowed location: 22.4120949 (latitude), 70.7807653 (longitude)
-    const allowedLocation = { latitude:   22.4158008, longitude: 70.7881985 };
+    // Allowed location: 22.4183951 (latitude), 70.7807652 (longitude)
+    const allowedLocation = { latitude: 22.4183951, longitude: 70.7807652};
     const radius = 250; // Radius in meters (250 meters)
 
     // HTML Elements
@@ -75,8 +75,9 @@
 
     // Function to calculate distance (Haversine formula)
     function getDistance(lat1, lon1, lat2, lon2) {
-      const toRad = (value) => (value * Math.PI) / 180;
+      const toRad = (value) => (value * Math.PI) / 180; // Convert degrees to radians
       const R = 6371e3; // Earth's radius in meters
+
       const φ1 = toRad(lat1);
       const φ2 = toRad(lat2);
       const Δφ = toRad(lat2 - lat1);
@@ -87,7 +88,9 @@
         Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-      return R * c; // Distance in meters
+      const distance = R * c; // Distance in meters
+      console.log(`Calculated Distance: ${distance.toFixed(2)} meters`);
+      return distance;
     }
 
     // Function to check user's location
@@ -97,7 +100,7 @@
           (position) => {
             const { latitude, longitude } = position.coords;
 
-            // Print current location in the console
+            // Log current location
             console.log(`Current Location: Latitude: ${latitude}, Longitude: ${longitude}`);
 
             // Calculate the distance
@@ -107,10 +110,8 @@
               latitude,
               longitude
             );
-            const distanceInKm = distance / 1000; // Convert to kilometers
 
-            // Print the distance in the console
-            console.log(`Distance from Allowed Location: ${distanceInKm.toFixed(2)} km`);
+            console.log(`Distance from Allowed Location: ${distance.toFixed(2)} meters`);
 
             if (distance > radius) {
               locationMessage.textContent =
@@ -118,14 +119,13 @@
               locationMessage.className = "message error";
               callback(false);
             } else {
-              locationMessage.textContent =
-                "You are within the allowed location.";
+              locationMessage.textContent = "You are within the allowed location.";
               locationMessage.className = "message success";
               callback(true);
             }
           },
           (error) => {
-            console.error("Geolocation error:", error);  // Debugging error
+            console.error("Geolocation error:", error);
             switch (error.code) {
               case error.PERMISSION_DENIED:
                 locationMessage.textContent = "Location permission denied.";
@@ -214,8 +214,7 @@
           const deviceBlockedUntil = new Date();
           deviceBlockedUntil.setHours(deviceBlockedUntil.getHours() + 24);
           localStorage.setItem("deviceBlockedUntil", deviceBlockedUntil);
-
-          attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}.`;
+          attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}`;
           attendanceMessage.className = "message success";
         } else {
           attendanceMessage.textContent =
