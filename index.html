@@ -171,10 +171,7 @@
           // Check if the location is within the allowed radius (100 meters)
           const allowedRadius = 100;  // 100 meters
           if (distance <= allowedRadius) {
-            // locationInfo.innerHTML = `
-            //   <p>Current Location: Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}</p>
-            //   <p>Distance from Classroom: ${distance.toFixed(2)} meters</p>
-            // `;
+            // locationInfo.innerHTML = `Current Location: Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
 
             // Create attendance data object
             const attendanceData = {
@@ -248,8 +245,8 @@
                 Math.cos(φ1) * Math.cos(φ2) *
                 Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // Distance in meters
-      return distance;
+
+      return R * c; // in meters
     }
   </script>
 </body>
