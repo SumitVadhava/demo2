@@ -67,16 +67,12 @@
       background-color: #f44336;
       color: white;
     }
-    #locationInfo {
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>BCA JS Attendance</h1>
+    <h1>Attendance System</h1>
     
-    <!-- Form for Roll No and Batch No -->
     <div class="form-group">
       <label for="rollNo">Roll Number:</label>
       <input type="text" id="rollNo" required placeholder="Enter your Roll Number" />
@@ -85,16 +81,13 @@
       <label for="batchNo">Batch Number:</label>
       <input type="text" id="batchNo" required placeholder="Enter your Batch Number" />
     </div>
-    <button onclick="handleAttendance()">Mark Attendance</button>
+    <button onclick="markAttendance()">Mark Attendance</button>
     
-    <!-- Message for attendance status -->
     <div id="attendanceMessage" class="message"></div>
-    
   </div>
 
   <script>
     const attendanceMessage = document.getElementById("attendanceMessage");
-    const locationInfo = document.getElementById("locationInfo");
 
     // Predefined classroom location (latitude and longitude)
     const classroomLocation = {
@@ -103,14 +96,13 @@
     };
 
     // Function to handle attendance marking
-    function handleAttendance() {
+    function markAttendance() {
       const rollNo = document.getElementById("rollNo").value.trim();
       const batchNo = document.getElementById("batchNo").value.trim();
 
       if (!rollNo || !batchNo) {
         attendanceMessage.textContent = "Please enter both Roll Number and Batch Number.";
         attendanceMessage.className = "message error";
-        console.log("Failed to mark attendance: Roll Number or Batch Number is missing.");
         return;
       }
 
@@ -120,33 +112,14 @@
 
       // Check if the device is blocked for marking attendance
       const deviceBlockedUntil = localStorage.getItem("deviceBlockedUntil");
-
       if (deviceBlockedUntil) {
         const blockedUntil = new Date(deviceBlockedUntil);
         const now = new Date();
 
-        // If device is blocked
         if (now < blockedUntil) {
           const remainingTime = Math.ceil((blockedUntil - now) / (1000 * 60 * 60));
           attendanceMessage.textContent = `Your device is blocked for the next ${remainingTime} hours.`;
           attendanceMessage.className = "message error";
-          console.log(`Device is blocked. Remaining block time: ${remainingTime} hours.`);
-          return;
-        }
-      }
-
-      // Check if attendance has already been marked by this student
-      const lastAttendance = localStorage.getItem(rollNo);
-
-      if (lastAttendance) {
-        const lastTimestamp = new Date(lastAttendance);
-        const now = new Date();
-        const diffInHours = (now - lastTimestamp) / (1000 * 60 * 60);
-
-        if (diffInHours < 24) {
-          attendanceMessage.textContent = "You have already marked attendance in the last 24 hours.";
-          attendanceMessage.className = "message error";
-          console.log("Failed to mark attendance: Already marked within the last 24 hours.");
           return;
         }
       }
@@ -171,9 +144,7 @@
           // Check if the location is within the allowed radius (100 meters)
           const allowedRadius = 100;  // 100 meters
           if (distance <= allowedRadius) {
-            // locationInfo.innerHTML = `Current Location: Latitude ${location.coords.latitude}, Longitude ${location.coords.longitude}`;
-
-            // Create attendance data object
+            // Store the attendance data
             const attendanceData = {
               rollNo: rollNo,
               batchNo: batchNo,
@@ -185,7 +156,6 @@
               distance: distance
             };
 
-            // Store the student's attendance data in localStorage
             localStorage.setItem(rollNo, JSON.stringify(attendanceData));
 
             // Block the device for 24 hours after attendance is marked
@@ -195,41 +165,41 @@
 
             attendanceMessage.textContent = `Attendance marked successfully at ${currentTime}`;
             attendanceMessage.className = "message success";
-            console.log("Attendance successfully marked.");
           } else {
             attendanceMessage.textContent = "Attendance cannot be marked due to distance being too far from the classroom.";
             attendanceMessage.className = "message error";
-            console.log("Failed to mark attendance: Location is outside the allowed radius.");
           }
         } else {
           attendanceMessage.textContent = "Attendance cannot be marked due to invalid location.";
           attendanceMessage.className = "message error";
-          console.log("Failed to mark attendance: Invalid location.");
         }
       });
     }
 
-    // Function to check location using geolocation
+    // Function to check location using geolocation with high accuracy
     function checkLocation(callback) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const location = position;
-            const isAllowed = true; // You can add further checks based on your location criteria
+            const isAllowed = true;  // You can add additional checks if needed
             callback(isAllowed, location);
           },
           (error) => {
             attendanceMessage.textContent = "Location access denied.";
             attendanceMessage.className = "message error";
             callback(false, null);
-            console.log("Failed to access location: " + error.message);
+          },
+          {
+            enableHighAccuracy: true, // Request high accuracy for better geolocation results
+            timeout: 5000,             // Timeout in 5 seconds
+            maximumAge: 0              // Prevent caching of location data
           }
         );
       } else {
         attendanceMessage.textContent = "Geolocation is not supported by this browser.";
         attendanceMessage.className = "message error";
         callback(false, null);
-        console.log("Geolocation not supported by browser.");
       }
     }
 
@@ -245,8 +215,8 @@
                 Math.cos(φ1) * Math.cos(φ2) *
                 Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-      return R * c; // in meters
+      const distance = R * c; // Distance in meters
+      return distance;
     }
   </script>
 </body>
